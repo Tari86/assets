@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>مطابقة الأصول - مستشفى الرس العام</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Tahoma,Arial,sans-serif;background:#f0f4f8;direction:rtl;color:#1a202c;font-size:14px}
+.nav{background:#1a3c5e;color:white;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.nav h1{font-size:16px;font-weight:700}
+.nav-tabs{display:flex;gap:6px}
+.tab-btn{background:rgba(255,255,255,.15);border:none;color:white;padding:7px 14px;border-radius:20px;cursor:pointer;font-size:13px;font-family:inherit}
+.tab-btn.on{background:#f6ad55;color:#1a202c;font-weight:700}
+.page{display:none;padding:14px;max-width:860px;margin:0 auto}
+.page.on{display:block}
+.sbar{background:white;border-radius:12px;padding:12px;margin-bottom:12px;box-shadow:0 2px 6px rgba(0,0,0,.07)}
+.sbar input,.sbar select{width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;direction:rtl;font-family:inherit;background:#f8fafc}
+.sbar input:focus,.sbar select:focus{outline:none;border-color:#3182ce;background:white}
+.frow{display:flex;gap:8px;margin-top:8px}
+.frow select{flex:1}
+.card{background:white;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 2px 6px rgba(0,0,0,.06);border-right:5px solid #cbd5e0;cursor:pointer;transition:transform .15s}
+.card:active{transform:scale(.98)}
+.card.s-done{border-right-color:#38a169}
+.card.s-inprogress{border-right-color:#d69e2e}
+.card.s-escalate{border-right-color:#e53e3e}
+.card.dec{background:#fff5f5;border-right-color:#9f1239}
+.ch{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.ctag{font-size:11px;color:#a0aec0;font-weight:600}
+.ctitle{font-size:15px;font-weight:700;margin:3px 0}
+.cmeta{font-size:12px;color:#718096}
+.cnotes{font-size:12px;background:#fffbeb;color:#744210;padding:6px 10px;border-radius:6px;margin-top:8px;border-right:3px solid #f6ad55;line-height:1.5}
+.cnotes.dec{background:#fff5f5;color:#9b2c2c;border-right-color:#e53e3e}
+.badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0}
+.b-pending{background:#e2e8f0;color:#4a5568}
+.b-done{background:#c6f6d5;color:#22543d}
+.b-inprogress{background:#fefcbf;color:#744210}
+.b-escalate{background:#fed7d7;color:#822727}
+.pcount{font-size:11px;background:#ebf8ff;color:#2b6cb0;padding:2px 8px;border-radius:10px;display:inline-block;margin-top:4px}
+.updby{font-size:10px;color:#a0aec0;margin-top:3px}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;overflow-y:auto;padding:12px}
+.overlay.on{display:flex;align-items:flex-start;justify-content:center}
+.modal{background:white;border-radius:16px;width:100%;max-width:560px;padding:18px;margin-top:8px}
+.mhdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:12px;border-bottom:2px solid #e2e8f0}
+.mhdr h2{font-size:15px;color:#1a3c5e;line-height:1.4;flex:1}
+.mclose{background:#e2e8f0;border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;flex-shrink:0;margin-right:8px;font-family:inherit}
+
+/* TABS inside modal */
+.mtabs{display:flex;gap:0;margin-bottom:16px;border-radius:10px;overflow:hidden;border:1.5px solid #e2e8f0}
+.mtab{flex:1;padding:9px;background:#f8fafc;border:none;cursor:pointer;font-size:13px;font-family:inherit;font-weight:600;color:#718096;transition:all .15s}
+.mtab.on{background:#1a3c5e;color:white}
+.mpanel{display:none}.mpanel.on{display:block}
+
+/* Edit fields */
+.fgroup{margin-bottom:12px}
+.fgroup label{font-size:12px;font-weight:700;color:#4a5568;display:block;margin-bottom:5px}
+.fgroup input,.fgroup select,.fgroup textarea{width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;font-family:inherit;direction:rtl;background:#fff;transition:border-color .15s}
+.fgroup input:focus,.fgroup select:focus,.fgroup textarea:focus{outline:none;border-color:#3182ce;background:#f0f9ff}
+.fgroup textarea{resize:vertical;min-height:70px}
+.fgroup .edited{border-color:#38a169;background:#f0fff4}
+.frow2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.nbox{background:#fffbeb;border:1.5px solid #f6ad55;border-radius:8px;padding:10px;margin-bottom:14px;font-size:13px;color:#744210;line-height:1.7}
+.nbox.dec{background:#fff5f5;border-color:#e53e3e;color:#9b2c2c}
+
+/* Status */
+.ssel{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.sbtn{padding:8px 14px;border-radius:20px;border:2px solid #e2e8f0;background:white;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit}
+.sbtn.a-pending{background:#e2e8f0;border-color:#a0aec0;color:#4a5568}
+.sbtn.a-done{background:#c6f6d5;border-color:#38a169;color:#22543d}
+.sbtn.a-inprogress{background:#fefcbf;border-color:#d69e2e;color:#744210}
+.sbtn.a-escalate{background:#fed7d7;border-color:#e53e3e;color:#822727}
+
+/* Photos */
+.uparea{border:2px dashed #cbd5e0;border-radius:10px;padding:16px;text-align:center;cursor:pointer;margin-bottom:10px;transition:all .2s}
+.uparea:hover{border-color:#3182ce;background:#ebf8ff}
+.uparea input{display:none}
+.uparea .uico{font-size:26px}
+.uparea p{color:#718096;font-size:13px;margin-top:5px}
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.pthumb{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;background:#e2e8f0}
+.pthumb img{width:100%;height:100%;object-fit:cover}
+.pdel{position:absolute;top:3px;left:3px;background:rgba(0,0,0,.6);color:white;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center}
+.savebtn{width:100%;padding:14px;background:#1a3c5e;color:white;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;margin-top:10px;font-family:inherit}
+.savebtn:hover{background:#2c5282}
+.edited-badge{font-size:11px;background:#c6f6d5;color:#22543d;padding:2px 8px;border-radius:10px;display:inline-block;margin-top:4px}
+
+/* Dashboard */
+.sgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+@media(min-width:480px){.sgrid{grid-template-columns:repeat(4,1fr)}}
+.scard{background:white;border-radius:12px;padding:14px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.snum{font-size:30px;font-weight:800}
+.slb{font-size:12px;color:#718096;margin-top:3px}
+.n1{color:#1a3c5e}.n2{color:#38a169}.n3{color:#718096}.n4{color:#e53e3e}
+.psec{background:white;border-radius:12px;padding:16px;margin-bottom:14px;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.psec h3{font-size:15px;font-weight:700;margin-bottom:14px;color:#1a3c5e}
+.prow{margin-bottom:12px}
+.plbl{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px}
+.pbg{background:#e2e8f0;border-radius:10px;height:10px;overflow:hidden}
+.pfill{height:100%;border-radius:10px;background:linear-gradient(90deg,#3182ce,#63b3ed);transition:width .5s}
+.esec{background:white;border-radius:12px;padding:16px;margin-bottom:14px;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.esec h3{font-size:15px;font-weight:700;color:#e53e3e;margin-bottom:12px}
+.eitem{padding:10px;border-right:3px solid #e53e3e;background:#fff5f5;border-radius:6px;margin-bottom:8px;font-size:13px}
+.ebtn{width:100%;padding:12px;background:#38a169;color:white;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px}
+.ebtn:hover{background:#2f855a}
+.empty{text-align:center;padding:50px 20px;color:#a0aec0}
+.empty .em{font-size:44px;margin-bottom:10px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:#1a3c5e;color:white;padding:12px 22px;border-radius:30px;font-size:14px;font-weight:600;transition:transform .3s;z-index:999;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.25)}
+.toast.on{transform:translateX(-50%) translateY(0)}
+.slbl{font-size:12px;font-weight:700;color:#4a5568;margin:14px 0 8px;letter-spacing:.3px}
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <h1>🏥 مطابقة الأصول</h1>
+  <div class="nav-tabs">
+    <button class="tab-btn on" onclick="gotoPage('field',this)">الميداني</button>
+    <button class="tab-btn" onclick="gotoPage('dash',this)">المشرف</button>
+  </div>
+</div>
+
+<div class="page on" id="page-field">
+  <div class="sbar">
+    <input type="text" id="q" placeholder="🔍 ابحث برقم TAG أو اسم الأصل أو الموقع..." oninput="render()">
+    <div class="frow">
+      <select id="fgrp" onchange="render()"><option value="">📍 كل المجموعات</option></select>
+      <select id="fsts" onchange="render()">
+        <option value="">📋 كل الحالات</option>
+        <option value="pending">⏳ لم يبدأ</option>
+        <option value="inprogress">🔄 جارٍ</option>
+        <option value="done">✅ منجز</option>
+        <option value="escalate">🔴 تصعيد</option>
+      </select>
+    </div>
+  </div>
+  <div id="list"></div>
+</div>
+
+<div class="page" id="page-dash">
+  <div class="sgrid">
+    <div class="scard"><div class="snum n1" id="dt">0</div><div class="slb">إجمالي</div></div>
+    <div class="scard"><div class="snum n2" id="dd">0</div><div class="slb">✅ منجز</div></div>
+    <div class="scard"><div class="snum n3" id="dp">0</div><div class="slb">⏳ لم يبدأ</div></div>
+    <div class="scard"><div class="snum n4" id="de">0</div><div class="slb">🔴 تصعيد</div></div>
+  </div>
+  <div class="psec"><h3>📊 نسبة الإنجاز حسب المجموعة</h3><div id="pbars"></div></div>
+  <div class="esec" id="esec" style="display:none"><h3>🔴 أصول تحتاج تصعيد</h3><div id="elist"></div></div>
+  <button class="ebtn" onclick="exportCSV()">📥 تصدير التقرير النهائي</button>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="ov" onclick="bgClose(event)">
+  <div class="modal">
+    <div class="mhdr">
+      <h2 id="mtitle">—</h2>
+      <button class="mclose" onclick="closeModal()">✕</button>
+    </div>
+    <!-- Modal Tabs -->
+    <div class="mtabs">
+      <button class="mtab on" onclick="switchTab('edit',this)">✏️ تعديل البيانات</button>
+      <button class="mtab" onclick="switchTab('field',this)">📋 الميداني</button>
+      <button class="mtab" onclick="switchTab('photos',this)">📷 الصور</button>
+    </div>
+
+    <!-- TAB 1: EDIT DATA -->
+    <div class="mpanel on" id="tab-edit">
+      <div class="nbox" id="enbox" style="display:none"></div>
+      <div class="frow2">
+        <div class="fgroup"><label>الجهة المصنعة</label><input type="text" id="e-manufacturer" oninput="markEdited(this)" placeholder="أدخل اسم الجهة المصنعة"></div>
+        <div class="fgroup"><label>رقم الموديل</label><input type="text" id="e-model" oninput="markEdited(this)" placeholder="رقم الموديل"></div>
+      </div>
+      <div class="fgroup"><label>الرقم التسلسلي (Serial Number)</label><input type="text" id="e-serial" oninput="markEdited(this)" placeholder="الرقم التسلسلي"></div>
+      <div class="frow2">
+        <div class="fgroup"><label>تاريخ الدخول للخدمة</label><input type="date" id="e-date" oninput="markEdited(this)"></div>
+        <div class="fgroup"><label>التكلفة (ريال)</label><input type="number" id="e-cost" oninput="markEdited(this)" placeholder="0"></div>
+      </div>
+      <div class="fgroup"><label>حالة الأصل</label>
+        <select id="e-condition" onchange="markEdited(this)">
+          <option value="">-- اختر الحالة --</option>
+          <option value="ممتاز">ممتاز</option>
+          <option value="جيد">جيد</option>
+          <option value="متوسط">متوسط</option>
+          <option value="ضعيف">ضعيف</option>
+          <option value="معطل">معطل</option>
+          <option value="مكهن">مكهن</option>
+        </select>
+      </div>
+      <div class="fgroup"><label>وصف الأصل</label><input type="text" id="e-description" oninput="markEdited(this)" placeholder="وصف الأصل"></div>
+      <div class="fgroup"><label>التصنيف</label><input type="text" id="e-category" oninput="markEdited(this)" placeholder="تصنيف الأصل"></div>
+    </div>
+
+    <!-- TAB 2: FIELD WORK -->
+    <div class="mpanel" id="tab-field">
+      <div class="slbl">تحديث الحالة</div>
+      <div class="ssel" id="ssel"></div>
+      <div class="fgroup" style="margin-top:14px"><label>اسم المنفذ</label><input type="text" class="ifield" id="execName" placeholder="اكتب اسمك..."></div>
+      <div class="fgroup"><label>ملاحظات ميدانية</label><textarea id="fnotes" placeholder="أضف ملاحظاتك الميدانية..."></textarea></div>
+    </div>
+
+    <!-- TAB 3: PHOTOS -->
+    <div class="mpanel" id="tab-photos">
+      <div class="pgrid" id="pgrid"></div>
+      <div class="uparea" onclick="document.getElementById('pInput').click()">
+        <input type="file" id="pInput" accept="image/*" capture="environment" multiple onchange="addPhotos(event)">
+        <div class="uico">📷</div>
+        <p>اضغط لالتقاط صورة أو اختيارها من المعرض</p>
+      </div>
+    </div>
+
+    <button class="savebtn" onclick="saveAsset()">💾 حفظ جميع التعديلات</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const KEY = 'assets_v4';
+const INIT = [{"id": "C3-109-0010923", "description": "Tissue Embedding Center", "category": "اكسسوارات المختبر", "manufacturer": "Thermo", "serial": "B64100011", "model": "1294090936205", "date": "2017-01-01", "cost": "68200.0", "location": "مختبر علم الأنسجة", "group": "المختبر وبنك الدم", "facility": "مستشفى الرس العام", "condition": "False", "notes": "استكمال البيانات الناقصة | بيانات الموديل / الجهة المصنعة | إرفاق صورة واضحة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0008329", "description": "Cell Separators", "category": "اكسسوارات المختبر", "manufacturer": "Mms", "serial": "PX-18-0470", "model": "PX-100", "date": "2005-07-01", "cost": "129195.0", "location": "المبنى الرئيسى - بنك الدم", "group": "المختبر وبنك الدم", "facility": "مستشفى الرس العام", "condition": "True", "notes": "التحقق من تاريخ الخدمة | بيانات الموديل / الجهة المصنعة | إرفاق صورة واضحة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0003445", "description": "Chemiluminescence Immunoassay Analyzers", "category": "اكسسوارات المختبر", "manufacturer": "Beckman Coulter", "serial": "nan", "model": "nan", "date": "2018-01-01", "cost": "159500.0", "location": "المبنى الرئيسى", "group": "الأقسام الداخلية", "facility": "مستشفى الرس العام", "condition": "False", "notes": "استكمال البيانات الناقصة | بيانات الموديل / الجهة المصنعة | إرفاق صورة واضحة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-277-0000369", "description": "Sugar Testing Device", "category": "معدات اختبار", "manufacturer": "Roche", "serial": "nan", "model": "nan", "date": "2015-08-01", "cost": "217800.0", "location": "المبنى الرئيسي", "group": "الجفن", "facility": "الجفن", "condition": "False", "notes": "لا توجد ملاحظات", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0100979", "description": "Phco System", "category": "المعدات الجراحية", "manufacturer": "Johnson & Johnson", "serial": "202110329", "model": "VERITAS", "date": "2022-05-01", "cost": "203500.0", "location": "المبنى الرئيسى - قسم العمليات", "group": "قسم العمليات", "facility": "مستشفى الرس العام", "condition": "True", "notes": "التحقق من تاريخ الخدمة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0100820", "description": "جهاز صدمات", "category": "المعدات العلاجية الطبية الحيوية المتخصصة الأخرى", "manufacturer": "NIHON KOHDEN", "serial": "2932", "model": "TEC-8352K", "date": "2024-04-04", "cost": "4200.0", "location": "وحدة العناية المركزة المتوسطة", "group": "العناية المركزة", "facility": "مستشفى الرس العام", "condition": "True", "notes": "بيانات الموديل / الجهة المصنعة | تعديل التصنيف / الوصف", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0100795", "description": "جهاز عد خلايا الدم", "category": "المعدات العلاجية الطبية الحيوية المتخصصة الأخرى", "manufacturer": "BECKMAN", "serial": "BE49547", "model": "UNICEL-DXH900", "date": "2025-06-25", "cost": "280000.0", "location": "المبنى الرئيسى- المختبر", "group": "المختبر وبنك الدم", "facility": "مستشفى الرس العام", "condition": "True", "notes": "بيانات الموديل / الجهة المصنعة | تعديل التصنيف / الوصف", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0012213", "description": "Stimulators", "category": "المنبهات الطبية", "manufacturer": "Cosmogamma", "serial": "F10005", "model": "FIRING", "date": "2017-01-01", "cost": "85800.0", "location": "قسم العلاج الطبيعي", "group": "العلاج الطبيعي", "facility": "مستشفى الرس العام", "condition": "True", "notes": "بيانات الموديل / الجهة المصنعة | تعديل التصنيف / الوصف", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0010843", "description": "Ultrasound Units/Neuromuscular Stimulators, Physical Therapy", "category": "المنبهات الطبية", "manufacturer": "Btl", "serial": "2575B13473", "model": "P2710701", "date": "2017-01-01", "cost": "15400.0", "location": "قسم العلاج الطبيعي", "group": "العلاج الطبيعي", "facility": "مستشفى الرس العام", "condition": "True", "notes": "بيانات الموديل / الجهة المصنعة | إرفاق صورة واضحة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-179-0000348", "description": "Regulators, Suction", "category": "المنظمون الطبية", "manufacturer": "Fazzini S>R>L", "serial": "150029", "model": "F-31.60", "date": "2016-01-01", "cost": "2190888.17", "location": "المبنى الرئيسي", "group": "الركنة", "facility": "الركنة", "condition": "True", "notes": "تكلفة غير متناسبة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-275-0000478", "description": "Regulators, Suction", "category": "المنظمون الطبية", "manufacturer": "Vacuum", "serial": "1760B6039", "model": "TLP2824", "date": "2016-01-01", "cost": "2190888.17", "location": "المبنى الرئيسي", "group": "الغضياء والسلمات", "facility": "الغضياء والسلمات", "condition": "False", "notes": "استكمال البيانات الناقصة | تكلفة غير متناسبة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0013251", "description": "Humidifiers, Heated", "category": "أجهزة تكييف الغاز المستوحاة", "manufacturer": "Fisher&Paykel", "serial": "nan", "model": "nan", "date": "2017-01-01", "cost": "29150.0", "location": "ICU", "group": "العناية المركزة", "facility": "مستشفى الرس العام", "condition": "مفقود", "notes": "أصول مكهنة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-275-0000483", "description": "Blood Gas/Ph Analyzers", "category": "أجهزة علم الأمراض", "manufacturer": "Edan", "serial": "304093-M159-01840031", "model": "SONOTRAX 11POO", "date": "2016-01-01", "cost": "42250.0", "location": "المبنى الرئيسي", "group": "الغضياء والسلمات", "facility": "الغضياء والسلمات", "condition": "nan", "notes": "استكمال البيانات الناقصة | بيانات الموديل / الجهة المصنعة | تعديل التصنيف / الوصف", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-275-0000482", "description": "Blood Gas/Ph Analyzers", "category": "أجهزة علم الأمراض", "manufacturer": "I-stat", "serial": "تم نقلة لمستشفى الرس ", "model": "تم نقلة لمستشفى الرس ", "date": "2016-01-01", "cost": "22000.0", "location": "المبنى الرئيسي", "group": "الغضياء والسلمات", "facility": "الغضياء والسلمات", "condition": "nan", "notes": "بيانات الموديل / الجهة المصنعة | إرفاق صورة واضحة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-403-0000182", "description": "Hematology Analyzers", "category": "أجهزة علم الأمراض", "manufacturer": "Sysmex", "serial": "nan", "model": "nan", "date": "2013-01-01", "cost": "44918.92", "location": "المبنى الرئيسي", "group": "الحوطة بالرس", "facility": "الحوطة بالرس", "condition": "nan", "notes": "استكمال البيانات الناقصة | بيانات الموديل / الجهة المصنعة | إرفاق صورة واضحة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0100825", "description": "سرير كهربائي", "category": "أسرة طبية", "manufacturer": "M.MASTER", "serial": "00013132-6445", "model": "MEB-253", "date": "2024-04-04", "cost": "25000.0", "location": "الرئيسي - الطوارئ", "group": "الطوارئ والإنعاش", "facility": "مستشفى الرس العام", "condition": "True", "notes": "لا توجد ملاحظات", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0002761", "description": "MRI MACHINE", "category": "أشعة الرنين المغناطيسي", "manufacturer": "Siemens", "serial": "27246", "model": "MAGNETOM AVANTO", "date": "2010-08-03", "cost": "29700.0", "location": "المبنى الرئيسى - التصوير بالرنين المغناطيسي", "group": "قسم الأشعة", "facility": "مستشفى الرس العام", "condition": "True", "notes": "التحقق من تاريخ الخدمة | إرفاق صورة واضحة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0004152", "description": "Warmers, Radiant, Infant, Mobile", "category": "تدفئة الرضع والعلاج بالضوء", "manufacturer": "Drager", "serial": "7420", "model": "TEC-5531K", "date": "2017-01-01", "cost": "38500.0", "location": "المبنى الرئيسى - سحب العينات نساء", "group": "الأقسام الداخلية", "facility": "مستشفى الرس العام", "condition": "True", "notes": "بيانات الموديل / الجهة المصنعة | إرفاق صورة واضحة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0103757", "description": "Refrigerator, Laboratory", "category": "ثلاجات", "manufacturer": "Evermed", "serial": "nan", "model": "nan", "date": "2018-01-01", "cost": "46200.0", "location": "قطاع الصحة العامة", "group": "الصحة العامة", "facility": "مستشفى الرس العام", "condition": "مفقود", "notes": "أصول مكهنة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0100952", "description": "FREEZER, LABORATORY", "category": "ثلاجات", "manufacturer": "med0703", "serial": "nan", "model": "nan", "date": "2023-01-03", "cost": "33000.0", "location": "مختبر علم الأنسجة", "group": "المختبر وبنك الدم", "facility": "مستشفى الرس العام", "condition": "True", "notes": "استكمال البيانات الناقصة | بيانات الموديل / الجهة المصنعة | إرفاق صورة واضحة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0023482", "description": "Ventilators", "category": "جهاز تنفس اصطناعي", "manufacturer": "Masimo", "serial": "VCDC140090", "model": "EAQE ii", "date": "2017-11-01", "cost": "25300.0", "location": "المبنى الرئيسى - الطوارئ", "group": "الطوارئ والإنعاش", "facility": "مستشفى الرس العام", "condition": "True", "notes": "أصول مكهنة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0023481", "description": "Ventilators", "category": "جهاز تنفس اصطناعي", "manufacturer": "Masimo", "serial": "VCDC140078", "model": "EAQE ii", "date": "2017-01-01", "cost": "25300.0", "location": "المبنى الرئيسى - الطوارئ", "group": "الطوارئ والإنعاش", "facility": "مستشفى الرس العام", "condition": "True", "notes": "أصول مكهنة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0021220", "description": "Ventilators", "category": "جهاز تنفس اصطناعي", "manufacturer": "Carefusion", "serial": "nan", "model": "nan", "date": "2015-01-01", "cost": "11000.0", "location": "الخدمات الطبية الطارئة", "group": "الطوارئ والإنعاش", "facility": "مستشفى الرس العام", "condition": "True", "notes": "استكمال البيانات الناقصة | بيانات الموديل / الجهة المصنعة | إرفاق صورة واضحة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0012296", "description": "Ventilators", "category": "جهاز تنفس اصطناعي", "manufacturer": "Puritan Bennett", "serial": "nan", "model": "nan", "date": "2017-01-01", "cost": "30800.0", "location": "ICU", "group": "العناية المركزة", "facility": "مستشفى الرس العام", "condition": "مفقود", "notes": "أصول مكهنة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0003203", "description": "Ventilators", "category": "جهاز تنفس اصطناعي", "manufacturer": "General Electric", "serial": "nan", "model": "nan", "date": "2018-01-01", "cost": "30800.0", "location": "الرئيسي - قسم الإنعاش", "group": "الطوارئ والإنعاش", "facility": "مستشفى الرس العام", "condition": "True", "notes": "استكمال البيانات الناقصة | بيانات الموديل / الجهة المصنعة | إرفاق صورة واضحة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0007080", "description": "Respiration Monitors", "category": "جهاز مراقبة تنفس", "manufacturer": "Philips", "serial": "100293602", "model": "V60", "date": "2020-04-15", "cost": "54077.82", "location": "PICU", "group": "العناية المركزة", "facility": "مستشفى الرس العام", "condition": "True", "notes": "التحقق من تاريخ الخدمة | بيانات الموديل / الجهة المصنعة | إرفاق صورة واضحة | تعديل التصنيف / الوصف", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0008343", "description": "Incubators", "category": "حاضنات حديثي الولادة", "manufacturer": "Helmer", "serial": "PC900H", "model": "989001", "date": "2005-07-01", "cost": "24258.62", "location": "المبنى الرئيسى - بنك الدم", "group": "المختبر وبنك الدم", "facility": "مستشفى الرس العام", "condition": "True", "notes": "التحقق من تاريخ الخدمة | بيانات الموديل / الجهة المصنعة | إرفاق صورة واضحة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0023801", "description": "Incubators, Infant, Transport", "category": "حاضنات حديثي الولادة", "manufacturer": "Drager", "serial": "nan", "model": "CALEO", "date": "2017-01-01", "cost": "19360.0", "location": "عناية حديثي الولادة", "group": "العناية المركزة", "facility": "مستشفى الرس العام", "condition": "True", "notes": "استكمال البيانات الناقصة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0010601", "description": "أجهزة تقنية", "category": "كمبيوتر", "manufacturer": "Dell", "serial": "nan", "model": "D15M", "date": "2017-01-01", "cost": "18400.0", "location": "مركز الامير فيصل للتدريب", "group": "مركز الأمير فيصل للتدريب", "facility": "مستشفى الرس العام", "condition": "True", "notes": "استكمال البيانات الناقصة | بيانات الموديل / الجهة المصنعة | إرفاق صورة واضحة | تعديل التصنيف / الوصف", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0010584", "description": "أجهزة تقنية", "category": "كمبيوتر", "manufacturer": "Dell", "serial": "nan", "model": "D13M", "date": "2017-01-01", "cost": "18400.0", "location": "مركز الامير فيصل للتدريب", "group": "مركز الأمير فيصل للتدريب", "facility": "مستشفى الرس العام", "condition": "True", "notes": "استكمال البيانات الناقصة | بيانات الموديل / الجهة المصنعة | إرفاق صورة واضحة | تعديل التصنيف / الوصف", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0014881", "description": "Medical Interface Equipment", "category": "معدات اختبار", "manufacturer": "Lumenis", "serial": "VPPS 100W", "model": "006-75149", "date": "2009-02-01", "cost": "42900.0", "location": "المبنى الرئيسى - قسم العمليات", "group": "قسم العمليات", "facility": "مستشفى الرس العام", "condition": "True", "notes": "التحقق من تاريخ الخدمة | بيانات الموديل / الجهة المصنعة | إرفاق صورة واضحة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0014750", "description": "Thermometers, Electronic", "category": "معدات اختبار", "manufacturer": "Welchallyn", "serial": "12130109", "model": "692", "date": "2013-12-01", "cost": "40993.33", "location": "المبنى الرئيسى - قسم الباطنة نساء", "group": "الأقسام الداخلية", "facility": "مستشفى الرس العام", "condition": "True", "notes": "التحقق من تاريخ الخدمة | بيانات الموديل / الجهة المصنعة | تعديل التصنيف / الوصف", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0014734", "description": "Thermometers, Electronic", "category": "معدات اختبار", "manufacturer": "Welchallyn", "serial": "12250907", "model": "692", "date": "2013-11-01", "cost": "40993.33", "location": "المبنى الرئيسى - قسم الباطنة نساء", "group": "الأقسام الداخلية", "facility": "مستشفى الرس العام", "condition": "True", "notes": "التحقق من تاريخ الخدمة | بيانات الموديل / الجهة المصنعة | تعديل التصنيف / الوصف", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0012778", "description": "Blood Grouping Analyzers", "category": "معدات اختبار", "manufacturer": "Radwag", "serial": "nan", "model": "nan", "date": "2017-01-01", "cost": "59164.29", "location": "الطب المنزلي", "group": "العيادات الخارجية", "facility": "مستشفى الرس العام", "condition": "False", "notes": "استكمال البيانات الناقصة | بيانات الموديل / الجهة المصنعة | إرفاق صورة واضحة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0008375", "description": "Oxygen Analyzers", "category": "معدات اختبار", "manufacturer": "Pall", "serial": "nan", "model": "nan", "date": "2017-01-01", "cost": "46200.0", "location": "المبنى الرئيسى - بنك الدم", "group": "المختبر وبنك الدم", "facility": "مستشفى الرس العام", "condition": "False", "notes": "استكمال البيانات الناقصة | بيانات الموديل / الجهة المصنعة | إرفاق صورة واضحة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-275-0000317", "description": "Sterilizing Units", "category": "معدات تنظيف / تعقيم", "manufacturer": "Aqvarius", "serial": "7394", "model": " AQUARIUS 300B", "date": "2016-01-01", "cost": "35200.0", "location": "المبنى الرئيسي", "group": "الغضياء والسلمات", "facility": "الغضياء والسلمات", "condition": "False", "notes": "استكمال البيانات الناقصة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-453-0000080", "description": "Sterilizing Units, Dry Heat", "category": "معدات تنظيف / تعقيم", "manufacturer": "Hirayama", "serial": "10122072", "model": "DON-450/V", "date": "2012-10-10", "cost": "29700.0", "location": "المبنى الرئيسي", "group": "الجرذاوية", "facility": "الجرذاوية", "condition": "True", "notes": "لا توجد ملاحظات", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-309-0000298", "description": "Sterilizing Units", "category": "معدات تنظيف / تعقيم", "manufacturer": "Kronos B", "serial": "nan", "model": "nan", "date": "2012-01-01", "cost": "176000.0", "location": "المبنى الرئيسي", "group": "دخنة", "facility": "دخنة", "condition": "False", "notes": "استكمال البيانات الناقصة | بيانات الموديل / الجهة المصنعة | إرفاق صورة واضحة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0011242", "description": "Cleaning And Sanitizing Machine,", "category": "معدات تنظيف / تعقيم", "manufacturer": "Surfacide", "serial": "nan", "model": "nan", "date": "2017-01-01", "cost": "1053855.0", "location": "مركز الامير فيصل للتدريب", "group": "مركز الأمير فيصل للتدريب", "facility": "مستشفى الرس العام", "condition": "False", "notes": "استكمال البيانات الناقصة | بيانات الموديل / الجهة المصنعة | إرفاق صورة واضحة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0011241", "description": "Cleaning And Sanitizing Machine,", "category": "معدات تنظيف / تعقيم", "manufacturer": "Surfacide", "serial": "nan", "model": "nan", "date": "2017-01-01", "cost": "1053855.0", "location": "مركز الامير فيصل للتدريب", "group": "مركز الأمير فيصل للتدريب", "facility": "مستشفى الرس العام", "condition": "False", "notes": "استكمال البيانات الناقصة | بيانات الموديل / الجهة المصنعة | إرفاق صورة واضحة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0011240", "description": "Cleaning And Sanitizing Machine,", "category": "معدات تنظيف / تعقيم", "manufacturer": "Surfacide", "serial": "nan", "model": "nan", "date": "2017-01-01", "cost": "1053855.0", "location": "مركز الامير فيصل للتدريب", "group": "مركز الأمير فيصل للتدريب", "facility": "مستشفى الرس العام", "condition": "False", "notes": "استكمال البيانات الناقصة | بيانات الموديل / الجهة المصنعة | إرفاق صورة واضحة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0009554", "description": "Cleaners, Denture", "category": "معدات تنظيف / تعقيم", "manufacturer": "Triton", "serial": "nan", "model": "nan", "date": "2015-01-01", "cost": "35200.0", "location": "مبنى العيادات الخارجيه", "group": "العيادات الخارجية", "facility": "مستشفى الرس العام", "condition": "False", "notes": "استكمال البيانات الناقصة | بيانات الموديل / الجهة المصنعة | إرفاق صورة واضحة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0009550", "description": "Ultrasonic Cleaning Systems", "category": "معدات تنظيف / تعقيم", "manufacturer": "Ultrawave", "serial": "US-313-17100001", "model": "ULTRAWAVE", "date": "2017-01-01", "cost": "28600.0", "location": "مبنى العيادات الخارجيه", "group": "العيادات الخارجية", "facility": "مستشفى الرس العام", "condition": "False", "notes": "استكمال البيانات الناقصة | بيانات الموديل / الجهة المصنعة | إرفاق صورة واضحة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0008623", "description": "Perimeters, Automatic", "category": "معدات طب العيون", "manufacturer": "Kowa Co", "serial": "nan", "model": "nan", "date": "2021-12-15", "cost": "35200.0", "location": "مركز العيون", "group": "العيادات الخارجية", "facility": "مستشفى الرس العام", "condition": "False", "notes": "استكمال البيانات الناقصة | بيانات الموديل / الجهة المصنعة | إرفاق صورة واضحة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0100793", "description": "جهاز قياس الرحلان الكهربائي", "category": "معدات علم الأنسجة", "manufacturer": "SEBIA", "serial": "2538", "model": "CAPILARYS3 OCTA", "date": "2025-06-25", "cost": "210000.0", "location": "المبنى الرئيسى- المختبر", "group": "المختبر وبنك الدم", "facility": "مستشفى الرس العام", "condition": "True", "notes": "بيانات الموديل / الجهة المصنعة | تعديل التصنيف / الوصف", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0100791", "description": "جهاز فحص الجينات بي سي ار", "category": "معدات علم الأنسجة", "manufacturer": "CEPHEID", "serial": "110016863", "model": "CEPHEID", "date": "2025-06-25", "cost": "650000.0", "location": "المبنى الرئيسى- المختبر", "group": "المختبر وبنك الدم", "facility": "مستشفى الرس العام", "condition": "True", "notes": "بيانات الموديل / الجهة المصنعة | إرفاق صورة واضحة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0100796", "description": "جهاز عد خلايا الدم", "category": "معدات متخصصة أخرى - محلل", "manufacturer": "Sysmex", "serial": "50679", "model": "XN-10", "date": "2025-06-25", "cost": "300000.0", "location": "المبنى الرئيسى- المختبر", "group": "المختبر وبنك الدم", "facility": "مستشفى الرس العام", "condition": "True", "notes": "بيانات الموديل / الجهة المصنعة | تعديل التصنيف / الوصف", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0100792", "description": "جهاز حاضنة انابيب الدم", "category": "معدات مزج و تشتيت مختبرية", "manufacturer": "BD", "serial": "T12458", "model": "BACTEC FX", "date": "2025-06-25", "cost": "2500000.0", "location": "المبنى الرئيسى- المختبر", "group": "المختبر وبنك الدم", "facility": "مستشفى الرس العام", "condition": "True", "notes": "بيانات الموديل / الجهة المصنعة | تعديل التصنيف / الوصف | تكلفة غير متناسبة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0013424", "description": "Water Purification Filters", "category": "معدات مساعده للتطهير", "manufacturer": "Fresenius Medical Care", "serial": "nan", "model": "nan", "date": "2017-01-01", "cost": "26583.33", "location": "ICU", "group": "العناية المركزة", "facility": "مستشفى الرس العام", "condition": "True", "notes": "استكمال البيانات الناقصة | بيانات الموديل / الجهة المصنعة | إرفاق صورة واضحة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0012704", "description": "Water Purification Systems", "category": "معدات مساعده للتطهير", "manufacturer": "Elga", "serial": "nan", "model": "nan", "date": "2017-01-01", "cost": "59400.0", "location": "المبنى الرئيسى - بنك الدم", "group": "المختبر وبنك الدم", "facility": "مستشفى الرس العام", "condition": "مفقود", "notes": "أصول مكهنة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0011407", "description": "Water Purification Systems", "category": "معدات مساعده للتطهير", "manufacturer": "Fistreem Cyclon", "serial": "nan", "model": "nan", "date": "2017-01-01", "cost": "59400.0", "location": "المبنى الرئيسى - بنك الدم", "group": "المختبر وبنك الدم", "facility": "مستشفى الرس العام", "condition": "مفقود", "notes": "أصول مكهنة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-213-0000145", "description": "X-ray Film Processors, Automatic", "category": "مكونات الأشعة السينية", "manufacturer": "Ecomax", "serial": "nan", "model": "nan", "date": "2011-02-01", "cost": "23100.0", "location": "مركز صحي المطار", "group": "المطار بالرس", "facility": "المطار بالرس", "condition": "nan", "notes": "استكمال البيانات الناقصة | بيانات الموديل / الجهة المصنعة | إرفاق صورة واضحة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-309-0000312", "description": "X-ray Tubes", "category": "مكونات الأشعة السينية", "manufacturer": "Eva", "serial": "5F771", "model": "E7239X", "date": "2012-01-01", "cost": "77060.0", "location": "المبنى الرئيسي", "group": "دخنة", "facility": "دخنة", "condition": "True", "notes": "لا توجد ملاحظات", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-333-0000261", "description": "X-ray Tubes", "category": "مكونات الأشعة السينية", "manufacturer": "Gendex", "serial": "98600000101", "model": "L0050603", "date": "2011-01-01", "cost": "70054.55", "location": "المبنى الرئيسي", "group": "قصر بن عقيل", "facility": "قصر بن عقيل", "condition": "nan", "notes": "بيانات الموديل / الجهة المصنعة | إرفاق صورة واضحة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-309-0000297", "description": "X-ray Tubes", "category": "مكونات الأشعة السينية", "manufacturer": "Gendex", "serial": "10050600", "model": "ORALEXAC", "date": "2012-01-01", "cost": "77060.0", "location": "المبنى الرئيسي", "group": "دخنة", "facility": "دخنة", "condition": "True", "notes": "بيانات الموديل / الجهة المصنعة | تعديل التصنيف / الوصف", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-213-0000410", "description": "Collimators, Radiographic", "category": "مكونات الأشعة السينية", "manufacturer": "Rad Visione", "serial": "100054", "model": "RD", "date": "2011-02-01", "cost": "88000.0", "location": "مركز صحي المطار", "group": "المطار بالرس", "facility": "المطار بالرس", "condition": "True", "notes": "استكمال البيانات الناقصة | بيانات الموديل / الجهة المصنعة | إرفاق صورة واضحة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0003824", "description": "X Ray Measurement System", "category": "مكونات الأشعة السينية", "manufacturer": "Hill-rom", "serial": "282582HP6", "model": "5817110", "date": "2018-01-01", "cost": "660000.0", "location": "المبنى الرئيسى - قسم الأشعة", "group": "قسم الأشعة", "facility": "مستشفى الرس العام", "condition": "True", "notes": "بيانات الموديل / الجهة المصنعة | إرفاق صورة واضحة | تكلفة غير متناسبة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0003699", "description": "X Ray Transport", "category": "مكونات الأشعة السينية", "manufacturer": "Siemens", "serial": "3316", "model": "MOBILETTXP DIGITAL", "date": "2018-01-01", "cost": "660000.0", "location": "المبنى الرئيسى - قسم الأشعة", "group": "قسم الأشعة", "facility": "مستشفى الرس العام", "condition": "True", "notes": "بيانات الموديل / الجهة المصنعة | تعديل التصنيف / الوصف", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0003696", "description": "X-ray Tube Monitors", "category": "مكونات الأشعة السينية", "manufacturer": "General Electric", "serial": "4917", "model": "Al01IC11", "date": "2017-01-01", "cost": "257400.0", "location": "المبنى الرئيسى - قسم الأشعة", "group": "قسم الأشعة", "facility": "مستشفى الرس العام", "condition": "True", "notes": "بيانات الموديل / الجهة المصنعة | إرفاق صورة واضحة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}, {"id": "C3-109-0003680", "description": "X-ray Tube Monitors", "category": "مكونات الأشعة السينية", "manufacturer": "General Electric", "serial": "nan", "model": "nan", "date": "2017-01-01", "cost": "257400.0", "location": "المبنى الرئيسى - قسم الأشعة", "group": "قسم الأشعة", "facility": "مستشفى الرس العام", "condition": "True", "notes": "استكمال البيانات الناقصة | بيانات الموديل / الجهة المصنعة | إرفاق صورة واضحة", "status": "pending", "fieldNotes": "", "photos": [], "updatedBy": "", "updatedAt": ""}];
+
+let DB = JSON.parse(localStorage.getItem(KEY) || 'null');
+if (!DB) {
+  DB = {};
+  INIT.forEach(a => {
+    DB[a.id] = Object.assign({
+      status:'pending', fieldNotes:'', updatedBy:'', updatedAt:'',
+      photos:[], dataEdited:false
+    }, a);
+  });
+  save();
+}
+
+function save() { localStorage.setItem(KEY, JSON.stringify(DB)); }
+function all() { return Object.values(DB); }
+
+window.onload = function() {
+  const grps = [...new Set(INIT.map(a=>a.group))].sort();
+  const sel = document.getElementById('fgrp');
+  grps.forEach(g => { const o=document.createElement('option'); o.value=g; o.textContent=g; sel.appendChild(o); });
+  render(); renderDash();
+};
+
+function render() {
+  const q=document.getElementById('q').value.trim().toLowerCase();
+  const grp=document.getElementById('fgrp').value;
+  const sts=document.getElementById('fsts').value;
+  let list=all().filter(a=>{
+    const mq=!q||a.id.toLowerCase().includes(q)||a.description.toLowerCase().includes(q)||(a.location||'').toLowerCase().includes(q);
+    return mq&&(!grp||a.group===grp)&&(!sts||a.status===sts);
+  });
+  const el=document.getElementById('list');
+  if(!list.length){el.innerHTML='<div class="empty"><div class="em">🔍</div><p>لا توجد نتائج</p></div>';return;}
+  const bm={pending:['b-pending','⏳ لم يبدأ'],done:['b-done','✅ منجز'],inprogress:['b-inprogress','🔄 جارٍ'],escalate:['b-escalate','🔴 تصعيد']};
+  el.innerHTML=list.map(a=>{
+    const isDec=(a.notes||'').includes('مكهن')||(a.notes||'').includes('تكهين');
+    const [bc,bl]=bm[a.status||'pending']||bm.pending;
+    const ph=a.photos?a.photos.length:0;
+    const edited=a.dataEdited?'<span class="edited-badge">✏️ بيانات معدّلة</span>':'';
+    return `<div class="card s-${a.status||'pending'} ${isDec?'dec':''}" onclick="openModal('${a.id}')">
+      <div class="ch">
+        <div style="flex:1;min-width:0">
+          <div class="ctag">${a.id} · ${a.facility||''}</div>
+          <div class="ctitle">${a.description}</div>
+          <div class="cmeta">📍 ${a.location||''} · ${a.category||''}</div>
+          ${ph?`<span class="pcount">📷 ${ph} صورة</span>`:''} ${edited}
+          ${a.updatedBy?`<div class="updby">آخر تعديل: ${a.updatedBy} - ${a.updatedAt}</div>`:''}
+        </div>
+        <span class="badge ${bc}">${bl}</span>
+      </div>
+      ${a.notes&&a.notes!='لا توجد ملاحظات'?`<div class="cnotes ${isDec?'dec':''}">${isDec?'⚠️ ':'📋 '}${a.notes}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ---- MODAL ----
+let cid=null, cPhotos=[], cStatus=null;
+
+function openModal(id) {
+  cid=id; const a=DB[id]; if(!a) return;
+  cPhotos=[...(a.photos||[])]; cStatus=a.status||'pending';
+  const isDec=(a.notes||'').includes('مكهن')||(a.notes||'').includes('تكهين');
+  document.getElementById('mtitle').textContent=a.description;
+
+  // Notes box
+  const nb=document.getElementById('enbox');
+  if(a.notes&&a.notes!='لا توجد ملاحظات'){
+    nb.style.display='block';
+    nb.className='nbox'+(isDec?' dec':'');
+    nb.textContent=(isDec?'⚠️ الأصل مكهن — ':' 📋 ')+a.notes;
+  } else nb.style.display='none';
+
+  // Fill edit fields
+  document.getElementById('e-manufacturer').value=a.manufacturer||'';
+  document.getElementById('e-model').value=a.model||'';
+  document.getElementById('e-serial').value=a.serial||'';
+  document.getElementById('e-date').value=a.date||'';
+  document.getElementById('e-cost').value=a.cost||'';
+  document.getElementById('e-condition').value=a.condition||'';
+  document.getElementById('e-description').value=a.description||'';
+  document.getElementById('e-category').value=a.category||'';
+
+  // Remove edited highlight on open
+  document.querySelectorAll('.fgroup input,.fgroup select,.fgroup textarea').forEach(el=>el.classList.remove('edited'));
+
+  // Fill field tab
+  document.getElementById('execName').value=a.updatedBy||'';
+  document.getElementById('fnotes').value=a.fieldNotes||'';
+
+  // Status buttons
+  const sm={pending:'a-pending',done:'a-done',inprogress:'a-inprogress',escalate:'a-escalate'};
+  document.getElementById('ssel').innerHTML=
+    ['pending','inprogress','done','escalate'].map(s=>
+      `<button class="sbtn ${cStatus===s?sm[s]:''}" onclick="pickS('${s}',this)">${
+        {pending:'⏳ لم يبدأ',inprogress:'🔄 جارٍ',done:'✅ منجز',escalate:'🔴 تصعيد'}[s]
+      }</button>`
+    ).join('');
+
+  // Photos
+  renderPG();
+
+  // Reset to first tab
+  switchTab('edit', document.querySelector('.mtab'));
+  document.getElementById('ov').classList.add('on');
+}
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.mpanel').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.mtab').forEach(b=>b.classList.remove('on'));
+  document.getElementById('tab-'+name).classList.add('on');
+  btn.classList.add('on');
+  if(name==='photos') renderPG();
+}
+
+function markEdited(el) { el.classList.add('edited'); }
+
+function renderPG() {
+  const g=document.getElementById('pgrid'); if(!g) return;
+  if(!cPhotos.length){g.innerHTML='<p style="color:#a0aec0;font-size:13px;text-align:center;padding:10px">لا توجد صور بعد</p>';return;}
+  g.innerHTML=cPhotos.map((p,i)=>`<div class="pthumb"><img src="${p}"><button class="pdel" onclick="delPhoto(${i})">✕</button></div>`).join('');
+}
+
+function delPhoto(i){ cPhotos.splice(i,1); renderPG(); }
+
+function addPhotos(e) {
+  Array.from(e.target.files).forEach(f=>{
+    const r=new FileReader();
+    r.onload=ev=>{ cPhotos.push(ev.target.result); renderPG(); showToast('✅ تمت إضافة الصورة'); };
+    r.readAsDataURL(f);
+  });
+  e.target.value='';
+}
+
+function pickS(s,btn) {
+  cStatus=s;
+  document.querySelectorAll('.sbtn').forEach(b=>b.className='sbtn');
+  const m={pending:'a-pending',done:'a-done',inprogress:'a-inprogress',escalate:'a-escalate'};
+  btn.className=`sbtn ${m[s]}`;
+}
+
+function saveAsset() {
+  const a=DB[cid]; if(!a) return;
+  // Save edited data
+  const newManuf=document.getElementById('e-manufacturer').value;
+  const newModel=document.getElementById('e-model').value;
+  const newSerial=document.getElementById('e-serial').value;
+  const newDate=document.getElementById('e-date').value;
+  const newCost=document.getElementById('e-cost').value;
+  const newCond=document.getElementById('e-condition').value;
+  const newDesc=document.getElementById('e-description').value;
+  const newCat=document.getElementById('e-category').value;
+
+  // Check if any data was changed
+  const changed = newManuf!=(a.manufacturer||'') || newModel!=(a.model||'') ||
+    newSerial!=(a.serial||'') || newDate!=(a.date||'') ||
+    newCost!=(a.cost||'') || newCond!=(a.condition||'') ||
+    newDesc!=a.description || newCat!=(a.category||'');
+
+  a.manufacturer=newManuf; a.model=newModel; a.serial=newSerial;
+  a.date=newDate; a.cost=newCost; a.condition=newCond;
+  a.description=newDesc; a.category=newCat;
+  if(changed) a.dataEdited=true;
+
+  // Save field data
+  a.status=cStatus||'pending';
+  a.fieldNotes=document.getElementById('fnotes').value;
+  a.updatedBy=document.getElementById('execName').value;
+  a.updatedAt=new Date().toLocaleString('ar-SA');
+  a.photos=[...cPhotos];
+
+  save(); closeModal(); render(); renderDash();
+  showToast('✅ تم حفظ جميع التعديلات');
+}
+
+function closeModal() {
+  document.getElementById('ov').classList.remove('on');
+  cid=null; cStatus=null; cPhotos=[];
+}
+function bgClose(e) { if(e.target===document.getElementById('ov')) closeModal(); }
+
+// ---- DASHBOARD ----
+function renderDash() {
+  const list=all();
+  document.getElementById('dt').textContent=list.length;
+  document.getElementById('dd').textContent=list.filter(a=>a.status==='done').length;
+  document.getElementById('dp').textContent=list.filter(a=>!a.status||a.status==='pending').length;
+  document.getElementById('de').textContent=list.filter(a=>a.status==='escalate').length;
+  const grps=[...new Set(list.map(a=>a.group))].sort();
+  document.getElementById('pbars').innerHTML=grps.map(g=>{
+    const ga=list.filter(a=>a.group===g);
+    const gd=ga.filter(a=>a.status==='done').length;
+    const pct=ga.length?Math.round(gd/ga.length*100):0;
+    return `<div class="prow"><div class="plbl"><span>${g}</span><span>${gd}/${ga.length} (${pct}%)</span></div><div class="pbg"><div class="pfill" style="width:${pct}%"></div></div></div>`;
+  }).join('');
+  const escList=list.filter(a=>a.status==='escalate');
+  const esec=document.getElementById('esec');
+  if(escList.length){
+    esec.style.display='block';
+    document.getElementById('elist').innerHTML=escList.map(a=>
+      `<div class="eitem"><strong>${a.description}</strong><br><small>${a.id} · ${a.location||''}</small>${a.fieldNotes?`<br><small>ملاحظة: ${a.fieldNotes}</small>`:''}</div>`
+    ).join('');
+  } else esec.style.display='none';
+}
+
+// ---- EXPORT ----
+function exportCSV() {
+  const list=all();
+  const h=['رقم TAG','الوصف','التصنيف','الجهة المصنعة','الرقم التسلسلي','رقم الموديل','تاريخ الخدمة','التكلفة','الموقع','المجموعة','المنشأة','حالة الأصل','الملاحظات','الحالة','اسم المنفذ','ملاحظات الفريق','بيانات معدّلة','عدد الصور','آخر تحديث'];
+  const rows=list.map(a=>[
+    a.id,a.description,a.category,a.manufacturer,a.serial,a.model,
+    a.date,a.cost,a.location,a.group,a.facility,a.condition,a.notes,
+    a.status||'pending',a.updatedBy||'',a.fieldNotes||'',
+    a.dataEdited?'نعم':'لا',a.photos?a.photos.length:0,a.updatedAt||''
+  ]);
+  const csv=[h,...rows].map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='تقرير_الأصول_'+new Date().toLocaleDateString('ar-SA').replace(/\//g,'-')+'.csv';
+  a.click(); showToast('📥 تم التصدير');
+}
+
+function gotoPage(p,btn) {
+  document.querySelectorAll('.page').forEach(e=>e.classList.remove('on'));
+  document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('on'));
+  document.getElementById('page-'+p).classList.add('on');
+  btn.classList.add('on');
+  if(p==='dash') renderDash();
+}
+
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('on');
+  setTimeout(()=>t.classList.remove('on'),3000);
+}
+</script>
+</body>
+</html>
